@@ -5,10 +5,10 @@ from hpc_helper._hpc_helper import (
     build_job_submit_torque,
     check_hpc_status_file,
     check_interpreter,
+    cleanup_hpc_status_files,
     get_running_jobs_slurm,
     get_running_jobs_torque,
     write_hpc_status_file,
-    cleanup_hpc_status_files,
 )
 
 __version__ = "0.1.3"
