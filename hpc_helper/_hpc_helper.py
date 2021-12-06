@@ -30,9 +30,9 @@ def check_interpreter(deploy_type: str):
 
     """
     executable = sys.executable
-    if deploy_type == "hpc" or deploy_type == "remote" and "woody" not in executable:
+    if (deploy_type == "hpc" or deploy_type == "remote") and "woody" not in executable:
         raise AttributeError(f"'deploy_type' is '{deploy_type}', but '{deploy_type}' is not set as Python interpreter!")
-    if deploy_type == "local" or deploy_type == "develop" and "woody" in executable:
+    if (deploy_type == "local" or deploy_type == "develop") and "woody" in executable:
         raise AttributeError(f"'deploy_type' is '{deploy_type}', but 'hpc' is set as Python interpreter!")
 
     print(f"Running on {sys.executable}...")
