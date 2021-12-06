@@ -3,6 +3,10 @@ name = "hpc_helper"
 version = "0.1.1"
 description = "Python package with helper functions for working with FAU's High Performance Cluster (HPC)."
 authors = ["Robert Richer <robert.richer@fau.de>"]
+readme = "README.md"
+homepage = "https://github.com/mad-lab-fau/hpc-helper"
+repository = "https://github.com/mad-lab-fau/hpc-helper"
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.7.1,<3.10"
