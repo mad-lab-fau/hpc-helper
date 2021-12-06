@@ -91,7 +91,8 @@ def cleanup_hpc_status_files(dir_list: Sequence[path_t]):
     """
     for dir_path in dir_list:
         hpc_status_path = Path(dir_path).joinpath("hpc_status")
-        hpc_status_path.unlink(missing_ok=True)
+        if hpc_status_path.exists():
+            hpc_status_path.unlink()
     print("Done with cleanup!")
 
 
