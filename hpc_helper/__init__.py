@@ -8,9 +8,10 @@ from hpc_helper._hpc_helper import (
     get_running_jobs_slurm,
     get_running_jobs_torque,
     write_hpc_status_file,
+    cleanup_hpc_status_files,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = [
     "build_job_submit_torque",
@@ -20,4 +21,5 @@ __all__ = [
     "check_hpc_status_file",
     "write_hpc_status_file",
     "check_interpreter",
+    "cleanup_hpc_status_files",
 ]

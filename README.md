@@ -16,7 +16,7 @@ Then you can install ``hpc-helper`` via pip.
 
 Installation from [PyPi](https://pypi.org/): 
 ```bash
-pip install hpc-helper
+pip install hpc_helper
 ```
 
 Installation from local repository copy:
