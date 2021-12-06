@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hpc_helper"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python package with helper functions for working with FAU's High Performance Cluster (HPC)."
 authors = ["Robert Richer <robert.richer@fau.de>"]
 readme = "README.md"
