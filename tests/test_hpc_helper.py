@@ -6,12 +6,12 @@ from unittest import mock
 import pytest
 
 from hpc_helper import (
-    check_interpreter,
-    check_hpc_status_file,
-    write_hpc_status_file,
-    cleanup_hpc_status_files,
-    build_job_submit_torque,
     build_job_submit_slurm,
+    build_job_submit_torque,
+    check_hpc_status_file,
+    check_interpreter,
+    cleanup_hpc_status_files,
+    write_hpc_status_file,
 )
 
 TEST_FILE_PATH = Path(__file__).parent

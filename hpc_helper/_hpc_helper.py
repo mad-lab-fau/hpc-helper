@@ -81,7 +81,7 @@ def write_hpc_status_file(folder_path: path_t, exit_status: int):
     """
     folder_path = Path(folder_path)
     hpc_status_path = folder_path.joinpath("hpc_status")
-    hpc_status_path.write_text(str(exit_status))
+    hpc_status_path.write_text(str(exit_status), encoding="utf-8")
 
 
 def cleanup_hpc_status_files(dir_list: Sequence[path_t]):
