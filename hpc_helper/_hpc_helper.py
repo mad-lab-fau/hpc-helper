@@ -6,10 +6,9 @@ import warnings
 from pathlib import Path
 from typing import Optional, Sequence
 
-from typing_extensions import Literal
+from typing_extensions import Literal, get_args
 
 from hpc_helper._types import path_t
-
 
 TARGET_SYSTEM = Literal["woody", "tinygpu", "tinyfat", "emmy", "meggie"]
 
@@ -36,9 +35,9 @@ def check_interpreter(deploy_type: str):
 
     """
     executable = sys.executable
-    if deploy_type in ("hpc", "remote") and "woody" not in executable:
+    if deploy_type in ("hpc", "remote") and all(target not in executable for target in get_args(TARGET_SYSTEM)):
         raise AttributeError(f"'deploy_type' is '{deploy_type}', but '{deploy_type}' is not set as Python interpreter!")
-    if deploy_type in ("local", "develop") and "woody" in executable:
+    if deploy_type in ("local", "develop") and any(target in executable for target in get_args(TARGET_SYSTEM)):
         raise AttributeError(f"'deploy_type' is '{deploy_type}', but 'hpc' is set as Python interpreter!")
 
     print(f"Running on {sys.executable}")
@@ -55,17 +54,16 @@ def check_hpc_status_file(folder_path: path_t) -> bool:
     Returns
     -------
     bool
-        ``True`` if the ``hpc_status`` file exists and contains the status code ``0``, i.e.,
+        ``True`` if the ``hpc_status`` file exists and contains the exit_status ``0``, i.e.,
         the job was successfully terminated.
 
     """
     folder_path = Path(folder_path)
-    touch_command = f"cd {str(folder_path)} && touch hpc_status"
-    subprocess.call(touch_command, shell=True)
-    with open(Path(f"{folder_path}/hpc_status"), "w+", encoding="utf-8") as f:
-        status = f.read()
-        if len(status) > 0 and int(status) == 0:
-            return True
+    hpc_status_path = folder_path.joinpath("hpc_status")
+    hpc_status_path.touch()
+    exit_status = hpc_status_path.read_text(encoding="utf-8")
+    if len(exit_status) > 0 and int(exit_status) == 0:
+        return True
 
     return False
 
@@ -82,8 +80,8 @@ def write_hpc_status_file(folder_path: path_t, exit_status: int):
 
     """
     folder_path = Path(folder_path)
-    out_command = f"cd {str(folder_path)} && echo {exit_status} > hpc_status"
-    subprocess.call(out_command, shell=True)
+    hpc_status_path = folder_path.joinpath("hpc_status")
+    hpc_status_path.write_text(str(exit_status))
 
 
 def cleanup_hpc_status_files(dir_list: Sequence[path_t]):
@@ -151,6 +149,7 @@ def build_job_submit_torque(
     nodes: Optional[int] = 1,
     ppn: Optional[int] = 4,
     walltime: Optional[str] = "24:00:00",
+    args: Optional[Sequence[str]] = None,
     **kwargs,
 ) -> str:
     """Build job submission command for Torque.
@@ -172,6 +171,9 @@ def build_job_submit_torque(
     walltime : str
         required wall clock time (runtime) in the format ``HH:MM:SS``.
         Default: "24:00:00" (24 hours)
+    args : list of str
+        list of unnamed arguments that will be passed to the job submission script as ``$PARAMS`` environment variable.
+        In the job submission script the arguments can be parsed by calling ``eval set "$PARAMS"``
     kwargs :
         additional arguments that are passed to the job submission script.
         This can, for instance, be a path to the data folder etc.
@@ -190,14 +192,11 @@ def build_job_submit_torque(
             category=DeprecationWarning,
         )
     qsub = _check_command_for_target_system("qsub", target_system)
-    qsub_command = f"{qsub} -N {job_name} -m abe -l nodes={nodes}:ppn={ppn},walltime={walltime} "
+    qsub_command = f"{qsub} -N {job_name} -l nodes={nodes}:ppn={ppn},walltime={walltime} -m abe "
 
-    if len(kwargs) != 0:
-        qsub_command += "-v "
-        for key, value in kwargs.items():
-            qsub_command += f"{key}={value} "
+    qsub_command = _add_arguments_torque(qsub_command, args, **kwargs)
 
-    qsub_command += f"{script_name}"
+    qsub_command += f" {script_name}"
     return qsub_command
 
 
@@ -209,6 +208,7 @@ def build_job_submit_slurm(
     tasks_per_node: Optional[int] = 4,
     walltime: Optional[str] = "24:00:00",
     mail_type: Optional[Literal["BEGIN", "END", "FAIL", "ALL"]] = "ALL",
+    args: Optional[Sequence[str]] = None,
     **kwargs,
 ) -> str:
     """Build job submission command for Slurm.
@@ -232,9 +232,12 @@ def build_job_submit_slurm(
         Default: "24:00:00" (24 hours)
     mail_type : one of {"BEGIN", "END", "FAIL", "ALL"}
         type of mails to receive
+    args : list of str
+        list of unnamed arguments that will be passed to the job submission script as ``$PARAMS`` environment variable.
+        In the job submission script the arguments can be parsed by calling ``eval set "$PARAMS"``
     kwargs :
-        additional arguments that are passed to the job submission script.
-        This can, for instance, be a path to the data folder etc.
+        additional named arguments that are passed to the job submission script as environment variables.
+        This can, for instance, be a path to the data folder, etc.
 
     Returns
     -------
@@ -246,15 +249,11 @@ def build_job_submit_slurm(
     sbatch = _check_command_for_target_system("sbatch", target_system=target_system)
     sbatch_command = (
         f"{sbatch} --job-name {job_name} --nodes={nodes} --ntasks-per-node={tasks_per_node} "
-        f"--time={walltime} --mail-type={mail_type} "
+        f"--time={walltime} --mail-type={mail_type} {script_name} "
     )
 
-    if kwargs is not None:
-        sbatch_command += "-v "
-        for key, value in kwargs.items():
-            sbatch_command += f"{key}={value} "
+    sbatch_command = _add_arguments_slurm(sbatch_command, args, **kwargs)
 
-    sbatch_command += f"{script_name}"
     return sbatch_command
 
 
@@ -271,7 +270,42 @@ def _check_command_for_target_system(command: str, target_system: TARGET_SYSTEM)
                 f"'slurm' not supported for target system '{target_system}'! "
                 f"Please migrate your submission scripts to torque!"
             )
-    if target_system is "tinygpu":
+    if target_system == "tinygpu":
         command += ".tinygpu"
 
     return command
+
+
+def _add_arguments_torque(command_str: str, args: Optional[Sequence[str]] = None, **kwargs) -> str:
+    if len(kwargs) != 0 or args is not None:
+        command_str += "-v "
+        if args is not None:
+            command_str += 'PARAMS="'
+            for arg in args:
+                command_str += f"{arg} "
+            command_str = command_str.strip()
+            command_str += '" '
+        if len(kwargs) != 0:
+            for key, value in kwargs.items():
+                command_str += f"{key}={value},"
+            # remove the last comma
+            command_str = command_str[:-1]
+
+    return command_str.strip()
+
+
+def _add_arguments_slurm(command_str: str, args: Optional[Sequence[str]] = None, **kwargs) -> str:
+    if len(kwargs) != 0 or args is not None:
+        if args is not None:
+            command_str += 'PARAMS="'
+            for arg in args:
+                command_str += f"{arg} "
+            command_str = command_str.strip()
+            command_str += '" '
+        if len(kwargs) != 0:
+            for key, value in kwargs.items():
+                command_str += f"{key}={value},"
+            # remove the last comma
+            command_str = command_str[:-1]
+
+    return command_str.strip()
