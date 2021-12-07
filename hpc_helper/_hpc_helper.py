@@ -2,10 +2,16 @@
 import re
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 from typing import Optional, Sequence
 
+from typing_extensions import Literal
+
 from hpc_helper._types import path_t
+
+
+TARGET_SYSTEM = Literal["woody", "tinygpu", "tinyfat", "emmy", "meggie"]
 
 
 def check_interpreter(deploy_type: str):
@@ -35,7 +41,7 @@ def check_interpreter(deploy_type: str):
     if deploy_type in ("local", "develop") and "woody" in executable:
         raise AttributeError(f"'deploy_type' is '{deploy_type}', but 'hpc' is set as Python interpreter!")
 
-    print(f"Running on {sys.executable}...")
+    print(f"Running on {sys.executable}")
 
 
 def check_hpc_status_file(folder_path: path_t) -> bool:
@@ -96,13 +102,15 @@ def cleanup_hpc_status_files(dir_list: Sequence[path_t]):
     print("Done with cleanup!")
 
 
-def get_running_jobs_torque(job_pattern: str) -> Sequence[str]:
+def get_running_jobs_torque(job_pattern: str, target_system: Optional[TARGET_SYSTEM] = "woody") -> Sequence[str]:
     """Return a list of all currently running jobs in the Torque scheduler on the HPC.
 
     Parameters
     ----------
     job_pattern : str
         regex pattern of job names. regex string **must** contain a capture group.
+    target_system : one of {"woody", "tinygpu", "tinyfat", "emmy", "meggie"}
+        name of target system/cluster
 
     Returns
     -------
@@ -111,7 +119,8 @@ def get_running_jobs_torque(job_pattern: str) -> Sequence[str]:
 
     """
     # job_pattern = (VP_\w+)
-    out = subprocess.check_output("qstat").decode("utf-8")
+    qstat = _check_command_for_target_system("qstat", target_system)
+    out = subprocess.check_output(qstat).decode("utf-8")
     return re.findall(rf"\S* {job_pattern}\s*\w+\s*\S*\s*R", out)
 
 
@@ -135,59 +144,10 @@ def get_running_jobs_slurm(job_pattern: str):
     raise NotImplementedError("Not implemented yet!")
 
 
-def build_job_submit_slurm(
-    job_name: str,
-    script_name: str,
-    nodes: Optional[int] = 1,
-    tasks_per_node: Optional[int] = 4,
-    walltime: Optional[str] = "24:00:00",
-    **kwargs,
-) -> str:
-    """Build job submission command for Slurm.
-
-    Parameters
-    ----------
-    job_name : str
-        job name
-    script_name : str
-        name of script to submit
-    nodes : int
-        number of nodes requested.
-        Default: 1
-    tasks_per_node : int
-        number of tasks per node.
-        Default: 4 (for woody)
-    walltime : str
-        required wall clock time (runtime) in the format ``HH:MM:SS``.
-        Default: "24:00:00" (24 hours)
-    kwargs :
-        additional arguments that are passed to the job submission script.
-        This can, for instance, be a path to the data folder etc.
-
-    Returns
-    -------
-    str
-        command to submit the specified job via Slurm. The command can be executed by passing it to
-        :func:`subprocess.call`.
-
-    """
-    # job_name: subject_id
-    sbatch_command = (
-        f"sbatch --job-name {job_name} --nodes={nodes} --ntasks-per-node={tasks_per_node} --time={walltime} "
-    )
-
-    if kwargs is not None:
-        sbatch_command += "-v "
-        for key, value in kwargs.items():
-            sbatch_command += f"{key}={value} "
-
-    sbatch_command += f"{script_name}"
-    return sbatch_command
-
-
 def build_job_submit_torque(
     job_name: str,
     script_name: str,
+    target_system: Optional[TARGET_SYSTEM] = "woody",
     nodes: Optional[int] = 1,
     ppn: Optional[int] = 4,
     walltime: Optional[str] = "24:00:00",
@@ -201,6 +161,8 @@ def build_job_submit_torque(
         job name
     script_name : str
         name of script to submit
+    target_system : one of {"woody", "tinygpu", "tinyfat", "emmy", "meggie"}
+        name of target system/cluster
     nodes : int
         number of nodes requested.
         Default: 1
@@ -221,8 +183,14 @@ def build_job_submit_torque(
         :func:`subprocess.call`.
 
     """
-    # job_name: subject_id
-    qsub_command = f"qsub --N {job_name} --l nodes={nodes}:ppn={ppn},walltime={walltime} "
+    if target_system == "tinygpu":
+        warnings.warn(
+            f"Using torque for '{target_system}' is deprecated. "
+            f"Please consider migrating your submission scripts to slurm!",
+            category=DeprecationWarning,
+        )
+    qsub = _check_command_for_target_system("qsub", target_system)
+    qsub_command = f"{qsub} -N {job_name} -m abe -l nodes={nodes}:ppn={ppn},walltime={walltime} "
 
     if len(kwargs) != 0:
         qsub_command += "-v "
@@ -233,5 +201,77 @@ def build_job_submit_torque(
     return qsub_command
 
 
-if __name__ == "__main__":
-    build_job_submit_torque("VP_03", "jobscript.sh")
+def build_job_submit_slurm(
+    job_name: str,
+    script_name: str,
+    target_system: Optional[TARGET_SYSTEM] = "woody",
+    nodes: Optional[int] = 1,
+    tasks_per_node: Optional[int] = 4,
+    walltime: Optional[str] = "24:00:00",
+    mail_type: Optional[Literal["BEGIN", "END", "FAIL", "ALL"]] = "ALL",
+    **kwargs,
+) -> str:
+    """Build job submission command for Slurm.
+
+    Parameters
+    ----------
+    job_name : str
+        job name
+    script_name : str
+        name of script to submit
+    target_system : one of {"woody", "tinygpu", "tinyfat", "emmy", "meggie"}
+        name of target system/cluster
+    nodes : int
+        number of nodes requested.
+        Default: 1
+    tasks_per_node : int
+        number of tasks per node.
+        Default: 4 (for woody)
+    walltime : str
+        required wall clock time (runtime) in the format ``HH:MM:SS``.
+        Default: "24:00:00" (24 hours)
+    mail_type : one of {"BEGIN", "END", "FAIL", "ALL"}
+        type of mails to receive
+    kwargs :
+        additional arguments that are passed to the job submission script.
+        This can, for instance, be a path to the data folder etc.
+
+    Returns
+    -------
+    str
+        command to submit the specified job via Slurm. The command can be executed by passing it to
+        :func:`subprocess.call`.
+
+    """
+    sbatch = _check_command_for_target_system("sbatch", target_system=target_system)
+    sbatch_command = (
+        f"{sbatch} --job-name {job_name} --nodes={nodes} --ntasks-per-node={tasks_per_node} "
+        f"--time={walltime} --mail-type={mail_type} "
+    )
+
+    if kwargs is not None:
+        sbatch_command += "-v "
+        for key, value in kwargs.items():
+            sbatch_command += f"{key}={value} "
+
+    sbatch_command += f"{script_name}"
+    return sbatch_command
+
+
+def _check_command_for_target_system(command: str, target_system: TARGET_SYSTEM) -> str:
+    if command.startswith("q"):
+        if target_system in ["meggie", "tinyfat"]:
+            raise AttributeError(
+                f"'torque' not supported for target system '{target_system}'! "
+                f"Please migrate your submission scripts to slurm!"
+            )
+    if command.startswith("s"):
+        if target_system in ["woody"]:
+            raise AttributeError(
+                f"'slurm' not supported for target system '{target_system}'! "
+                f"Please migrate your submission scripts to torque!"
+            )
+    if target_system is "tinygpu":
+        command += ".tinygpu"
+
+    return command
