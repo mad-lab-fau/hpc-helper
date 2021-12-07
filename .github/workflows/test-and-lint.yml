@@ -31,11 +31,11 @@ jobs:
       run: |
         poe format_check
         poe lint
-#    - name: Testing
-#      run: |
-#        poe test
-#    - name: "Check Codecov"
-#      uses: codecov/codecov-action@v2
-#      with:
-#        fail_ci_if_error: true
+    - name: Testing
+      run: |
+        poe test
+    - name: "Check Codecov"
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
 

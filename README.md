@@ -3,6 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/hpc-helper)](https://pypi.org/project/hpc-helper/)
 ![GitHub](https://img.shields.io/github/license/mad-lab-fau/hpc-helper)
 [![Test and Lint](https://github.com/mad-lab-fau/hpc-helper/actions/workflows/test-and-lint.yml/badge.svg)](https://github.com/mad-lab-fau/hpc-helper/actions/workflows/test-and-lint.yml)
+[![codecov](https://codecov.io/gh/mad-lab-fau/hpc-helper/branch/main/graph/badge.svg?token=GOUBR5KPQF)](https://codecov.io/gh/mad-lab-fau/hpc-helper)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/hpc-helper)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/mad-lab-fau/hpc-helper)
