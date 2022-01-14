@@ -250,7 +250,7 @@ def build_job_submit_slurm(
     sbatch = _check_command_for_target_system("sbatch", target_system=target_system)
     sbatch_command = f"{sbatch} --job-name {job_name} --nodes={nodes} --ntasks-per-node={tasks_per_node} "
     if target_system == "tinygpu":
-        sbatch_command += f"gres={gres} "
+        sbatch_command += f"--gres={gres} "
     sbatch_command += f"--time={walltime} --mail-type={mail_type} {script_name} "
 
     sbatch_command = _add_arguments_slurm(sbatch_command, args, **kwargs)
