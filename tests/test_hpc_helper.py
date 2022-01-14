@@ -143,10 +143,6 @@ class TestHpcHelper:
         out = build_job_submit_torque(
             job_name="Test_Job", script_name="jobscript.sh", target_system=target_system, args=args, **kwargs
         )
-        print("")
-        print(out)
-        print(expected)
-
         assert out == expected
 
     @pytest.mark.parametrize(
@@ -198,8 +194,5 @@ class TestHpcHelper:
         out = build_job_submit_slurm(
             job_name="Test_Job", script_name="jobscript.sh", target_system=target_system, args=args, **kwargs
         )
-
-        print(out)
-        print(expected)
 
         assert out == expected
