@@ -228,12 +228,15 @@ def build_job_submit_slurm(
     tasks_per_node : int
         number of tasks per node.
         Default: 4 (for woody)
-    walltime : str
+    gres : str, optional
+        configuration of requested GPUs (for tinygpu)
+        Default: "gpu:1" (for tinygpu)
+    walltime : str, optional
         required wall clock time (runtime) in the format ``HH:MM:SS``.
         Default: "24:00:00" (24 hours)
-    mail_type : one of {"BEGIN", "END", "FAIL", "ALL"}
-        type of mails to receive
-    args : list of str
+    mail_type : one of {"BEGIN", "END", "FAIL", "ALL"}, optional
+        type of mails to receive. Default: "ALL"
+    args : list of str, optional
         list of unnamed arguments that will be passed to the job submission script as ``$PARAMS`` environment variable.
         In the job submission script the arguments can be parsed by calling ``eval set "$PARAMS"``
     kwargs :
