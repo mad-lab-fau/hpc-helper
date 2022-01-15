@@ -116,7 +116,6 @@ def get_running_jobs_torque(job_pattern: str, target_system: Optional[TARGET_SYS
         list of job names that are currently running
 
     """
-    # job_pattern = (VP_\w+)
     qstat = _check_command_for_target_system("qstat", target_system)
     out = subprocess.check_output(qstat).decode("utf-8")
     return re.findall(rf"\S* {job_pattern}\s*\w+\s*\S*\s*R", out)
@@ -136,10 +135,8 @@ def get_running_jobs_slurm(job_pattern: str):
         list of job names that are currently running
 
     """
-    # job_pattern = (VP_\w+)
-    # out = subprocess.check_output("squeue").decode("utf-8")
-    # return re.findall(rf"\S* {job_pattern}\s*\w+\s*\S*\s*R", out)
-    raise NotImplementedError("Not implemented yet!")
+    out = subprocess.check_output("squeue").decode("utf-8")
+    return re.findall(rf"\d+\s*\w+\s*{job_pattern}\s*\w+\s*R\S*", out)
 
 
 def build_job_submit_torque(
@@ -200,6 +197,11 @@ def build_job_submit_torque(
     return qsub_command
 
 
+def _check_partition_slurm(partition: str, gres: str):
+    if partition in ("v100", "a100"):
+        assert partition in gres
+
+
 def build_job_submit_slurm(
     job_name: str,
     script_name: str,
@@ -207,6 +209,7 @@ def build_job_submit_slurm(
     nodes: Optional[int] = 1,
     tasks_per_node: Optional[int] = 4,
     gres: Optional[str] = "gpu:1",
+    partition: Optional[str] = None,
     walltime: Optional[str] = "24:00:00",
     mail_type: Optional[Literal["BEGIN", "END", "FAIL", "ALL"]] = "ALL",
     args: Optional[Sequence[str]] = None,
@@ -231,6 +234,8 @@ def build_job_submit_slurm(
     gres : str, optional
         configuration of requested GPUs (for tinygpu)
         Default: "gpu:1" (for tinygpu)
+    partition : str, optional
+        partition for tinygpu when specific nodes (e.g., A100 or V100) are requested.
     walltime : str, optional
         required wall clock time (runtime) in the format ``HH:MM:SS``.
         Default: "24:00:00" (24 hours)
@@ -251,8 +256,13 @@ def build_job_submit_slurm(
 
     """
     sbatch = _check_command_for_target_system("sbatch", target_system=target_system)
-    sbatch_command = f"{sbatch} --job-name {job_name} --nodes={nodes} --ntasks-per-node={tasks_per_node} "
+    sbatch_command = f"{sbatch} --job-name {job_name} "
+    if target_system != "tinygpu":
+        sbatch_command += f"--nodes={nodes} --ntasks-per-node={tasks_per_node} "
     if target_system == "tinygpu":
+        if partition is not None:
+            _check_partition_slurm(partition, gres)
+            sbatch_command += f"--partition={partition} "
         sbatch_command += f"--gres={gres} "
     sbatch_command += f"--time={walltime} --mail-type={mail_type} {script_name} "
 
@@ -300,16 +310,22 @@ def _add_arguments_torque(command_str: str, args: Optional[Sequence[str]] = None
 
 def _add_arguments_slurm(command_str: str, args: Optional[Sequence[str]] = None, **kwargs) -> str:
     if len(kwargs) != 0 or args is not None:
+        command_str += "--export="
         if args is not None:
             command_str += 'PARAMS="'
             for arg in args:
                 command_str += f"{arg} "
-            command_str = command_str.strip()
-            command_str += '" '
+            command_str = command_str.strip() + '"'
+            if len(kwargs) != 0:
+                command_str += ","
         if len(kwargs) != 0:
             for key, value in kwargs.items():
-                command_str += f"{key}={value},"
-            # remove the last comma
-            command_str = command_str[:-1]
+                command_str += f'{key}="{value}",'
+            # remove the last comma and add the quote again
+            command_str = command_str[:-2] + '"'
 
     return command_str.strip()
+
+
+if __name__ == "__main__":
+    print(build_job_submit_slurm("VP_01", "jobscript.sh", "tinygpu", BASE_PATH="hello", SUBJECT_ID="VP_01"))

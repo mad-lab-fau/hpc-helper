@@ -164,29 +164,28 @@ class TestHpcHelper:
                 "tinygpu",
                 None,
                 {},
-                "sbatch.tinygpu --job-name Test_Job --nodes=1 --ntasks-per-node=4 --gres=gpu:1 "
-                f"--time=24:00:00 --mail-type=ALL jobscript.sh",
+                "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 --time=24:00:00 --mail-type=ALL jobscript.sh",
             ),
             (
                 "tinygpu",
                 ["path1", "path2"],
                 {},
-                "sbatch.tinygpu --job-name Test_Job --nodes=1 --ntasks-per-node=4 --gres=gpu:1 "
-                f'--time=24:00:00 --mail-type=ALL jobscript.sh PARAMS="path1 path2"',
+                "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
+                f'--time=24:00:00 --mail-type=ALL jobscript.sh --export=PARAMS="path1 path2"',
             ),
             (
                 "tinygpu",
                 ["path1", ""],
                 {"SUBJECT_DIR": "path3"},
-                "sbatch.tinygpu --job-name Test_Job --nodes=1 --ntasks-per-node=4 --gres=gpu:1 "
-                f'--time=24:00:00 --mail-type=ALL jobscript.sh PARAMS="path1" SUBJECT_DIR=path3',
+                "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
+                f'--time=24:00:00 --mail-type=ALL jobscript.sh --export=PARAMS="path1",SUBJECT_DIR="path3"',
             ),
             (
                 "tinygpu",
                 None,
                 {"SUBJECT_DIR": "path3"},
-                "sbatch.tinygpu --job-name Test_Job --nodes=1 --ntasks-per-node=4 --gres=gpu:1 "
-                f"--time=24:00:00 --mail-type=ALL jobscript.sh SUBJECT_DIR=path3",
+                "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
+                f'--time=24:00:00 --mail-type=ALL jobscript.sh --export=SUBJECT_DIR="path3"',
             ),
         ],
     )
