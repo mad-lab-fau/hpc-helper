@@ -264,9 +264,10 @@ def build_job_submit_slurm(
             _check_partition_slurm(partition, gres)
             sbatch_command += f"--partition={partition} "
         sbatch_command += f"--gres={gres} "
-    sbatch_command += f"--time={walltime} --mail-type={mail_type} {script_name} "
+    sbatch_command += f"--time={walltime} --mail-type={mail_type} "
 
     sbatch_command = _add_arguments_slurm(sbatch_command, args, **kwargs)
+    sbatch_command += f" {script_name}"
 
     return sbatch_command
 
