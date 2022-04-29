@@ -287,6 +287,8 @@ def _check_command_for_target_system(command: str, target_system: TARGET_SYSTEM)
             )
     if target_system == "tinygpu":
         command += ".tinygpu"
+    if target_system == "tinyfat":
+        command += ".tinyfat"
 
     return command
 
