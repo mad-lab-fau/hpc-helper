@@ -120,7 +120,7 @@ def get_running_jobs_torque(job_pattern: str, target_system: Optional[TARGET_SYS
     return re.findall(rf"\S* {job_pattern}\s*\w+\s*\S*\s*R", out)
 
 
-def get_running_jobs_slurm(job_pattern: str, target_system: str):
+def get_running_jobs_slurm(target_system: str, job_pattern: Optional[str] = None) -> Sequence[str]:
     """Return a list of all currently running jobs in the Slurm scheduler on the HPC.
 
     Parameters
@@ -139,7 +139,9 @@ def get_running_jobs_slurm(job_pattern: str, target_system: str):
     out = subprocess.check_output([f"squeue.{target_system}", "--json", "--states=RUNNING"]).decode("utf-8")
     out = json.loads(out)
     jobs = out["jobs"]
-    running_jobs = [job["name"] for job in jobs if re.findall(job_pattern, job["name"])]
+    running_jobs = [job["name"] for job in jobs]
+    if job_pattern is not None:
+        running_jobs = [job for job in running_jobs if re.search(job_pattern, job)]
     return running_jobs
 
 
