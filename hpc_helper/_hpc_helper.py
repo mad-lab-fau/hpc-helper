@@ -5,9 +5,7 @@ import subprocess
 import sys
 import warnings
 from pathlib import Path
-from typing import Optional, Sequence
-
-from typing_extensions import Literal, get_args
+from typing import Optional, Sequence, Literal, get_args
 
 from hpc_helper._types import path_t
 
