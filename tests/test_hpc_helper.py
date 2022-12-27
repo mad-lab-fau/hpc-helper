@@ -87,68 +87,68 @@ class TestHpcHelper:
         cleanup_hpc_status_files([tmp_path])
         assert tmp_path.joinpath("hpc_status").exists() is False
 
+    # @pytest.mark.parametrize(
+    #     "target_system, expected",
+    #     [
+    #         ("woody", does_not_raise()),
+    #         ("tinygpu", pytest.warns(DeprecationWarning)),
+    #         ("tinyfat", pytest.raises(AttributeError)),
+    #     ],
+    # )
+    # def test_build_job_submit_torque_raises(self, target_system, expected):
+    #     with expected:
+    #         build_job_submit_torque(job_name="Test_Job", script_name="jobscript.sh", target_system=target_system)
+
+    # @pytest.mark.parametrize(
+    #     "target_system, args, kwargs, expected",
+    #     [
+    #         ("woody", None, {}, "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe jobscript.sh"),
+    #         (
+    #             "woody",
+    #             ["path1", "path2"],
+    #             {},
+    #             'qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe -v PARAMS="path1 path2" jobscript.sh',
+    #         ),
+    #         (
+    #             "woody",
+    #             ["path1", "path2"],
+    #             {"SUBJECT_DIR": "path3"},
+    #             "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe "
+    #             '-v PARAMS="path1 path2" SUBJECT_DIR=path3 jobscript.sh',
+    #         ),
+    #         (
+    #             "woody",
+    #             ["path1", ""],
+    #             {"SUBJECT_DIR": "path3"},
+    #             "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe "
+    #             '-v PARAMS="path1" SUBJECT_DIR=path3 jobscript.sh',
+    #         ),
+    #         (
+    #             "woody",
+    #             None,
+    #             {"SUBJECT_DIR": "path3"},
+    #             "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe -v SUBJECT_DIR=path3 jobscript.sh",
+    #         ),
+    #         (
+    #             "woody",
+    #             None,
+    #             {"SUBJECT_DIR": "path3", "TEST_PATH": "path4"},
+    #             "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe "
+    #             "-v SUBJECT_DIR=path3,TEST_PATH=path4 jobscript.sh",
+    #         ),
+    #         ("tinygpu", None, {}, "qsub.tinygpu -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe jobscript.sh"),
+    #     ],
+    # )
+    # def test_build_job_submit_torque(self, target_system, args, kwargs, expected):
+    #     out = build_job_submit_torque(
+    #         job_name="Test_Job", script_name="jobscript.sh", target_system=target_system, args=args, **kwargs
+    #     )
+    #     assert out == expected
+
     @pytest.mark.parametrize(
         "target_system, expected",
         [
             ("woody", does_not_raise()),
-            ("tinygpu", pytest.warns(DeprecationWarning)),
-            ("tinyfat", pytest.raises(AttributeError)),
-        ],
-    )
-    def test_build_job_submit_torque_raises(self, target_system, expected):
-        with expected:
-            build_job_submit_torque(job_name="Test_Job", script_name="jobscript.sh", target_system=target_system)
-
-    @pytest.mark.parametrize(
-        "target_system, args, kwargs, expected",
-        [
-            ("woody", None, {}, "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe jobscript.sh"),
-            (
-                "woody",
-                ["path1", "path2"],
-                {},
-                'qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe -v PARAMS="path1 path2" jobscript.sh',
-            ),
-            (
-                "woody",
-                ["path1", "path2"],
-                {"SUBJECT_DIR": "path3"},
-                "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe "
-                '-v PARAMS="path1 path2" SUBJECT_DIR=path3 jobscript.sh',
-            ),
-            (
-                "woody",
-                ["path1", ""],
-                {"SUBJECT_DIR": "path3"},
-                "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe "
-                '-v PARAMS="path1" SUBJECT_DIR=path3 jobscript.sh',
-            ),
-            (
-                "woody",
-                None,
-                {"SUBJECT_DIR": "path3"},
-                "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe -v SUBJECT_DIR=path3 jobscript.sh",
-            ),
-            (
-                "woody",
-                None,
-                {"SUBJECT_DIR": "path3", "TEST_PATH": "path4"},
-                "qsub -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe "
-                "-v SUBJECT_DIR=path3,TEST_PATH=path4 jobscript.sh",
-            ),
-            ("tinygpu", None, {}, "qsub.tinygpu -N Test_Job -l nodes=1:ppn=4,walltime=24:00:00 -m abe jobscript.sh"),
-        ],
-    )
-    def test_build_job_submit_torque(self, target_system, args, kwargs, expected):
-        out = build_job_submit_torque(
-            job_name="Test_Job", script_name="jobscript.sh", target_system=target_system, args=args, **kwargs
-        )
-        assert out == expected
-
-    @pytest.mark.parametrize(
-        "target_system, expected",
-        [
-            ("woody", pytest.raises(AttributeError)),
             ("tinygpu", does_not_raise()),
             ("tinyfat", does_not_raise()),
         ],
@@ -158,16 +158,20 @@ class TestHpcHelper:
             build_job_submit_slurm(job_name="Test_Job", script_name="jobscript.sh", target_system=target_system)
 
     @pytest.mark.parametrize(
-        "target_system, args, kwargs, expected",
+        "target_system, partition, gres, args, kwargs, expected",
         [
             (
                 "tinygpu",
+                None,
+                "gpu:1",
                 None,
                 {},
                 "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 --time=24:00:00 --mail-type=ALL jobscript.sh",
             ),
             (
                 "tinygpu",
+                None,
+                None,
                 ["path1", "path2"],
                 {},
                 "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
@@ -175,6 +179,8 @@ class TestHpcHelper:
             ),
             (
                 "tinygpu",
+                None,
+                None,
                 ["path1", ""],
                 {"SUBJECT_DIR": "path3"},
                 "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
@@ -183,15 +189,76 @@ class TestHpcHelper:
             (
                 "tinygpu",
                 None,
+                "gpu:rtx3080:4",
+                None,
                 {"SUBJECT_DIR": "path3"},
-                "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
+                "sbatch.tinygpu --job-name Test_Job --gres=gpu:rtx3080:4 "
+                f'--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
+            ),
+            (
+                "tinygpu",
+                "a100",
+                "gpu:a100:1",
+                None,
+                {},
+                "sbatch.tinygpu --job-name Test_Job --partition=a100 --gres=gpu:a100:1 "
+                "--time=24:00:00 --mail-type=ALL jobscript.sh",
+            ),
+            (
+                "tinygpu",
+                "v100",
+                "gpu:v100:4",
+                None,
+                {},
+                "sbatch.tinygpu --job-name Test_Job --partition=v100 --gres=gpu:v100:4 "
+                "--time=24:00:00 --mail-type=ALL jobscript.sh",
+            ),
+        ],
+    )
+    def test_build_job_submit_tinygpu(self, target_system, partition, gres, args, kwargs, expected):
+        out = build_job_submit_slurm(
+            job_name="Test_Job",
+            script_name="jobscript.sh",
+            target_system=target_system,
+            partition=partition,
+            gres=gres,
+            args=args,
+            **kwargs,
+        )
+
+        assert out == expected
+
+    @pytest.mark.parametrize(
+        "target_system, partition, args, kwargs, expected",
+        [
+            (
+                "tinyfat",
+                None,
+                None,
+                {"SUBJECT_DIR": "path3"},
+                "sbatch.tinyfat --job-name Test_Job --nodes=1 --ntasks-per-node=64 "
+                f'--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
+            ),
+            (
+                "tinyfat",
+                "broadwell256",
+                None,
+                {"SUBJECT_DIR": "path3"},
+                "sbatch.tinyfat --job-name Test_Job --nodes=1 --ntasks-per-node=64 -p broadwell256 "
                 f'--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
             ),
         ],
     )
-    def test_build_job_submit_slurm(self, target_system, args, kwargs, expected):
+    def test_build_job_submit_tinyfat(self, target_system, partition, args, kwargs, expected):
         out = build_job_submit_slurm(
-            job_name="Test_Job", script_name="jobscript.sh", target_system=target_system, args=args, **kwargs
+            job_name="Test_Job",
+            script_name="jobscript.sh",
+            target_system=target_system,
+            partition=partition,
+            nodes=1,
+            tasks_per_node=64,
+            args=args,
+            **kwargs,
         )
 
         assert out == expected

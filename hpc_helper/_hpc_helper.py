@@ -1,4 +1,5 @@
 """Helper functions for working with FAU's High Performance Cluster (HPC)."""
+import json
 import re
 import subprocess
 import sys
@@ -116,18 +117,20 @@ def get_running_jobs_torque(job_pattern: str, target_system: Optional[TARGET_SYS
         list of job names that are currently running
 
     """
-    qstat = _check_command_for_target_system("qstat", target_system)
-    out = subprocess.check_output(qstat).decode("utf-8")
+    # qstat = _check_command_for_target_system("qstat", target_system)
+    out = subprocess.check_output(f"qstat.{target_system}").decode("utf-8")
     return re.findall(rf"\S* {job_pattern}\s*\w+\s*\S*\s*R", out)
 
 
-def get_running_jobs_slurm(job_pattern: str):
+def get_running_jobs_slurm(job_pattern: str, target_system: str):
     """Return a list of all currently running jobs in the Slurm scheduler on the HPC.
 
     Parameters
     ----------
     job_pattern : str
         regex pattern of job names. regex string **must** contain a capture group.
+    target_system : one of {"woody", "tinygpu", "tinyfat", "emmy", "meggie"}
+        name of target system/cluster
 
     Returns
     -------
@@ -135,8 +138,11 @@ def get_running_jobs_slurm(job_pattern: str):
         list of job names that are currently running
 
     """
-    out = subprocess.check_output("squeue").decode("utf-8")
-    return re.findall(rf"\d+\s*\w+\s*{job_pattern}\s*\w+\s*R\S*", out)
+    out = subprocess.check_output([f"squeue.{target_system}", "--json", "--states=RUNNING"]).decode("utf-8")
+    out = json.loads(out)
+    jobs = out["jobs"]
+    running_jobs = [job["name"] for job in jobs if re.findall(job_pattern, job["name"])]
+    return running_jobs
 
 
 def build_job_submit_torque(
@@ -188,8 +194,8 @@ def build_job_submit_torque(
             f"Please consider migrating your submission scripts to slurm!",
             category=DeprecationWarning,
         )
-    qsub = _check_command_for_target_system("qsub", target_system)
-    qsub_command = f"{qsub} -N {job_name} -l nodes={nodes}:ppn={ppn},walltime={walltime} -m abe "
+    # qsub = _check_command_for_target_system("qsub", target_system)
+    qsub_command = f"qsub.{target_system} -N {job_name} -l nodes={nodes}:ppn={ppn},walltime={walltime} -m abe "
 
     qsub_command = _add_arguments_torque(qsub_command, args, **kwargs)
 
@@ -199,7 +205,11 @@ def build_job_submit_torque(
 
 def _check_partition_slurm(partition: str, gres: str):
     if partition in ("v100", "a100"):
-        assert partition in gres
+        assert f"gpu:{partition}" in gres
+    if partition == "rtx3080":
+        assert re.findall(r"gpu:(\d+)", gres)
+    if partition is None:
+        assert re.findall(r"gpu:(\d+)", gres) or "gpu:rtx3080" in gres or "gpu:rtx2080ti" in gres
 
 
 def build_job_submit_slurm(
@@ -235,7 +245,10 @@ def build_job_submit_slurm(
         configuration of requested GPUs (for tinygpu)
         Default: "gpu:1" (for tinygpu)
     partition : str, optional
-        partition for tinygpu when specific nodes (e.g., A100 or V100) are requested.
+        partition when specific nodes are requested.
+        Possible values are:
+        * `tinygpu`: this could for example be ``None`` to use the default partition, "rtx3080", "a100", or "v100"
+        * `tinyfat`: ``None``` to use the default partition, "broadwell512" or "broadwell256"
     walltime : str, optional
         required wall clock time (runtime) in the format ``HH:MM:SS``.
         Default: "24:00:00" (24 hours)
@@ -255,8 +268,9 @@ def build_job_submit_slurm(
         :func:`subprocess.call`.
 
     """
-    sbatch = _check_command_for_target_system("sbatch", target_system=target_system)
-    sbatch_command = f"{sbatch} --job-name {job_name} "
+    sbatch_command = f"sbatch.{target_system} --job-name {job_name} "
+    if gres is None:
+        gres = "gpu:1"
     if target_system != "tinygpu":
         sbatch_command += f"--nodes={nodes} --ntasks-per-node={tasks_per_node} "
     if target_system == "tinygpu":
@@ -264,6 +278,9 @@ def build_job_submit_slurm(
             _check_partition_slurm(partition, gres)
             sbatch_command += f"--partition={partition} "
         sbatch_command += f"--gres={gres} "
+    if target_system == "tinyfat":
+        if partition is not None:
+            sbatch_command += f"-p {partition} "
     sbatch_command += f"--time={walltime} --mail-type={mail_type} "
 
     sbatch_command = _add_arguments_slurm(sbatch_command, args, **kwargs)
@@ -272,25 +289,25 @@ def build_job_submit_slurm(
     return sbatch_command
 
 
-def _check_command_for_target_system(command: str, target_system: TARGET_SYSTEM) -> str:
-    if command.startswith("q"):
-        if target_system in ["meggie", "tinyfat"]:
-            raise AttributeError(
-                f"'torque' not supported for target system '{target_system}'! "
-                f"Please migrate your submission scripts to slurm!"
-            )
-    if command.startswith("s"):
-        if target_system in ["woody"]:
-            raise AttributeError(
-                f"'slurm' not supported for target system '{target_system}'! "
-                f"Please migrate your submission scripts to torque!"
-            )
-    if target_system == "tinygpu":
-        command += ".tinygpu"
-    if target_system == "tinyfat":
-        command += ".tinyfat"
-
-    return command
+# def _check_command_for_target_system(command: str, target_system: TARGET_SYSTEM) -> str:
+#     if command.startswith("q"):
+#         if target_system in ["meggie", "tinyfat"]:
+#             raise AttributeError(
+#                 f"'torque' not supported for target system '{target_system}'! "
+#                 f"Please migrate your submission scripts to slurm!"
+#             )
+#     if command.startswith("s"):
+#         if target_system in ["woody"]:
+#             raise AttributeError(
+#                 f"'slurm' not supported for target system '{target_system}'! "
+#                 f"Please migrate your submission scripts to torque!"
+#             )
+#     if target_system == "tinygpu":
+#         command += ".tinygpu"
+#     if target_system == "tinyfat":
+#         command += ".tinyfat"
+#
+#     return command
 
 
 def _add_arguments_torque(command_str: str, args: Optional[Sequence[str]] = None, **kwargs) -> str:
