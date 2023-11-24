@@ -4,8 +4,9 @@ import re
 import subprocess
 import sys
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Optional, Sequence, get_args
+from typing import Literal, Optional, get_args
 
 from hpc_helper._types import path_t
 
@@ -193,6 +194,7 @@ def build_job_submit_torque(
             f"Using torque for '{target_system}' is deprecated. "
             f"Please consider migrating your submission scripts to slurm!",
             category=DeprecationWarning,
+            stacklevel=2,
         )
     # qsub = _check_command_for_target_system("qsub", target_system)
     qsub_command = f"qsub.{target_system} -N {job_name} -l nodes={nodes}:ppn={ppn},walltime={walltime} -m abe "
@@ -281,9 +283,8 @@ def build_job_submit_slurm(
             _check_partition_slurm(partition, gres)
             sbatch_command += f"--partition={partition} "
         sbatch_command += f"--gres={gres} "
-    if target_system == "tinyfat":
-        if partition is not None:
-            sbatch_command += f"-p {partition} "
+    if target_system == "tinyfat" and partition is not None:
+        sbatch_command += f"-p {partition} "
     sbatch_command += f"--time={walltime} --mail-type={mail_type} "
 
     sbatch_command = _add_arguments_slurm(sbatch_command, args, **kwargs)

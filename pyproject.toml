@@ -12,13 +12,11 @@ license = "MIT"
 python = ">=3.8,<3.11"
 
 [tool.poetry.dev-dependencies]
+black = { version="^22", extras=["d"] }
 pytest = "^6"
 pytest-cov = "^3.0.0"
-prospector = "^1"
-black = "^22.3.0"
-isort = "^5.10.1"
 poethepoet = "^0.11.0"
-coverage = "^6.2"
+ruff = "^0.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -53,16 +51,13 @@ skip_gitignore = true
 
 
 [tool.poe.tasks]
-_black = "black ."
-_black_check = "black . --check"
-_isort = "isort **/*.py"
-_isort_check = "isort **/*.py --check-only"
-
-# Reformat all files using black and sort import
-docs = {"script" = "_tasks:task_docs"}
-format = { sequence = ["_black", "_isort"], help = "Format all files." }
-format_check = ["_black_check", "_isort_check"]
-lint = {cmd = "prospector", help = "Lint all files with Prospector." }
+_format = "ruff format ."
+_auto_fix = "ruff . --fix-only --exit-zero"
+format = ["_auto_fix", "_format"]
+lint = { cmd = "ruff hpc_helper --fix", help = "Lint all files with ruff." }
+_lint_ci = "ruff hpc_helper --output-format=github"
+_check_format = "ruff format . --check"
+ci_check = { sequence = ["_check_format", "_lint_ci"], help = "Check all potential format and linting issues." }
 test = {cmd = "pytest --cov=hpc-helper --cov-report=xml", help = "Run Pytest with coverage." }
 update_version = {"script" = "_tasks:task_update_version"}
 default = {sequence = ["format", "lint", "test"], help = "Run the default pipeline, consisting of formatting, linting, and testing."}

@@ -7,7 +7,6 @@ import pytest
 
 from hpc_helper import (
     build_job_submit_slurm,
-    build_job_submit_torque,
     check_hpc_status_file,
     check_interpreter,
     cleanup_hpc_status_files,
@@ -175,7 +174,7 @@ class TestHpcHelper:
                 ["path1", "path2"],
                 {},
                 "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
-                f'--time=24:00:00 --mail-type=ALL --export=PARAMS="path1 path2" jobscript.sh',
+                '--time=24:00:00 --mail-type=ALL --export=PARAMS="path1 path2" jobscript.sh',
             ),
             (
                 "tinygpu",
@@ -184,7 +183,7 @@ class TestHpcHelper:
                 ["path1", ""],
                 {"SUBJECT_DIR": "path3"},
                 "sbatch.tinygpu --job-name Test_Job --gres=gpu:1 "
-                f'--time=24:00:00 --mail-type=ALL --export=PARAMS="path1",SUBJECT_DIR="path3" jobscript.sh',
+                '--time=24:00:00 --mail-type=ALL --export=PARAMS="path1",SUBJECT_DIR="path3" jobscript.sh',
             ),
             (
                 "tinygpu",
@@ -193,7 +192,7 @@ class TestHpcHelper:
                 None,
                 {"SUBJECT_DIR": "path3"},
                 "sbatch.tinygpu --job-name Test_Job --gres=gpu:rtx3080:4 "
-                f'--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
+                '--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
             ),
             (
                 "tinygpu",
@@ -237,7 +236,7 @@ class TestHpcHelper:
                 None,
                 {"SUBJECT_DIR": "path3"},
                 "sbatch.tinyfat --job-name Test_Job --nodes=1 --ntasks-per-node=64 "
-                f'--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
+                '--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
             ),
             (
                 "tinyfat",
@@ -245,7 +244,7 @@ class TestHpcHelper:
                 None,
                 {"SUBJECT_DIR": "path3"},
                 "sbatch.tinyfat --job-name Test_Job --nodes=1 --ntasks-per-node=64 -p broadwell256 "
-                f'--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
+                '--time=24:00:00 --mail-type=ALL --export=SUBJECT_DIR="path3" jobscript.sh',
             ),
         ],
     )
