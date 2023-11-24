@@ -29,11 +29,10 @@ jobs:
         poetry install
     - name: Linting
       run: |
-        poe format_check
-        poe lint
+        poetry run poe ci_check
     - name: Testing
       run: |
-        poe test
+        poetry run poe test
     - name: "Check Codecov"
       uses: codecov/codecov-action@v2
       with:
