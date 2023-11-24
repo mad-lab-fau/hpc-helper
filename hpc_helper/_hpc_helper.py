@@ -268,7 +268,10 @@ def build_job_submit_slurm(
         :func:`subprocess.call`.
 
     """
-    sbatch_command = f"sbatch.{target_system} --job-name {job_name} "
+    if target_system != "woody":
+        sbatch_command = f"sbatch.{target_system} --job-name {job_name} "
+    else:
+        sbatch_command = f"sbatch --job-name {job_name} "
     if gres is None:
         gres = "gpu:1"
     if target_system != "tinygpu":
