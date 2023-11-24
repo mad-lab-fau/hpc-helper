@@ -1,5 +1,5 @@
 line-length = 120
-target-version = "py39"
+target-version = "py38"
 
 select = [
     # pyflakes
@@ -57,18 +57,12 @@ select = [
     "TRY",
     # flake8-use-pathlib
     "PTH",
-    "RUF",
-    # Numpy rules
-    "NPY",
-    # Implicit namespace packages
-    "INP",
-    # No relative imports
-    "TID252",
-    # f-strings over string concatenation
-    "FLY",
+    "RUF"
 ]
 
 ignore = [
+    # No explicit stacklevel keyword argument found in logging calls
+    "B028",
     # controversial
     "B006",
     # controversial
@@ -80,22 +74,25 @@ ignore = [
     "EM101",
     "EM102",
     "EM103",
-    # Exception strings
-    "TRY003",
+    # Multiline docstring summary
+    "D213",
     # Varaibles before return
     "RET504",
     # Abstract raise into inner function
     "TRY301",
+    # Avoid specifying long messages outside the exception class
+    "TRY003",
+    # Use type-checking block
+    "TCH001",
+    "TCH002",
+    "TCH003",
+    # .pivot_table is preferred to .pivot or .unstack; provides same functionality
+    "PD010",
     # df as varaible name
     "PD901",
     # melt over stack
     "PD013",
-    # No Any annotations
-    "ANN401",
-    # To many arguments
-    "PLR0913",
-    # Ignore because of formatting
-    "ISC001",
+    "ISC001" # Implicit string concatenation
 ]
 
 
@@ -105,8 +102,11 @@ exclude = [
     "doc/temp/*.py",
     ".eggs/*.py",
     "example_data",
+    "examples"
 ]
 
+[pylint]
+max-args = 15
 
 [pydocstyle]
 convention = "numpy"
