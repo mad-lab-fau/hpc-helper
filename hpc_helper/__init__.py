@@ -11,7 +11,7 @@ from hpc_helper._hpc_helper import (
     write_hpc_status_file,
 )
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 __all__ = [
     "build_job_submit_torque",
