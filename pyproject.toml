@@ -1,26 +1,28 @@
-[tool.poetry]
+[project]
 name = "hpc_helper"
 version = "0.3.3"
 description = "Python package with helper functions for working with FAU's High Performance Cluster (HPC)."
-authors = ["Robert Richer <robert.richer@fau.de>"]
+authors = [{ name = "Robert Richer", email = "robert.richer@fau.de" }]
+requires-python = ">=3.8,<3.13"
 readme = "README.md"
-homepage = "https://github.com/mad-lab-fau/hpc-helper"
-repository = "https://github.com/mad-lab-fau/hpc-helper"
 license = "MIT"
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.13"
+[project.urls]
+Homepage = "https://github.com/mad-lab-fau/hpc-helper"
+Repository = "https://github.com/mad-lab-fau/hpc-helper"
 
-[tool.poetry.dev-dependencies]
-black = { version="^22", extras=["d"] }
-pytest = "^6"
-pytest-cov = "^3.0.0"
-poethepoet = "^0.11.0"
-ruff = "^0.1.1"
+[dependency-groups]
+dev = [
+    "black[d]>=22,<23",
+    "pytest>=6,<7",
+    "pytest-cov>=3.0.0,<4",
+    "poethepoet>=0.11.0,<0.12",
+    "ruff>=0.1.1,<0.2",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 120
@@ -48,7 +50,6 @@ profile = "black"
 multi_line_output = 3
 line_length = 120
 skip_gitignore = true
-
 
 [tool.poe.tasks]
 _format = "ruff format ."

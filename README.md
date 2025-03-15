@@ -12,7 +12,7 @@ Python package with helper functions for working with FAU's [High Performance Cl
 
 ## Installation
 
-``hpc-helper`` requires Python >=3.7. First, install a compatible version of Python. 
+``hpc-helper`` requires Python >=3.8. First, install a compatible version of Python. 
 Then you can install ``hpc-helper`` via pip. 
 
 Installation from [PyPi](https://pypi.org/): 
